@@ -1,0 +1,149 @@
+{
+  "info": {
+    "_postman_id": "92b0a8c3-5841-4d26-841c-d40b4a7e4045",
+    "name": "Library",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "58566360",
+    "_collection_link": "https://go.postman.co/collection/58566360-92b0a8c3-5841-4d26-841c-d40b4a7e4045?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "AddBook",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const jsonData = pm.response.json();\nconst bookId = jsonData.ID; \npm.environment.set(\"book_id\",bookId);\n\npm.test(\"Status code is 200\", function () {\n    pm.response.to.have.status(200);\n});\n\npm.test(\"Response has Msg property\", function () {\n    pm.expect(jsonData).to.have.property(\"Msg\");\n});\n\npm.test(\"Msg is 'successfully added'\", function () {\n    pm.expect(jsonData.Msg).to.eql(\"successfully added\");\n});\n\npm.test(\"Content-Type header exists\", function () {\n    pm.response.to.have.header(\"Content-Type\");\n});\n\npm.test(\"Content-Type is JSON\", function () {\n    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");\n});\n\npm.test(\"Response time below 1200ms\", function () {\n    pm.expect(pm.response.responseTime).to.be.below(2000);\n});\n\npm.test(\"Body text contains 'successfully added'\", function () {\n    pm.expect(pm.response.text()).to.include(\"successfully added\");\n});\n\n\n\nconst schema = {\n  \"type\": \"object\",\n  \"properties\": {\n    \"Msg\": {\n      \"type\": \"string\"\n    },\n    \"ID\": {\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"Msg\",\n    \"ID\"\n  ]\n}\n\npm.test(\"Response body is valid JSON\", function () \n{\n    pm.response.to.have.jsonSchema(schema);\n})\n\nvar req = JSON.parse(pm.request.body.raw);\nfunction generateBookId()\n{\n    const expected_id = req.isbn + req.aisle;\n    return expected_id;\n} \n\npm.test(\"ID logic Validation\", function()\n{\n   const expected_id = generateBookId();\n   pm.expect(expected_id).to.eql(bookId);\n})\n\n\n\n\n\n\n\n// // ++++++ this is try and catch example \n// pm.collectionVariables.set(\"flag\", false);\n// var req = JSON.parse(pm.request.body.raw);\n// function generateBookId()\n// {\n//     const expected_id = req.isbn + req.aisle;\n//     return expected_id;\n// }   \n\n// function cleanupScript()\n// {\n//     const book_id = generateBookId();\n//     pm.environment.set(\"book_id\", book_id); // set the book_id environment variable, so that deletebook api will take from there.\n//     pm.collectionVariables.set(\"flag\", true);\n//     pm.execution.setNextRequest(DeleteBook);\n// }\n\n// try {\n//     //give some code to run here\n\n// }\n\n// catch (error) {\n//     cleanupScript();\n// }"
+            ]
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// adding dynamic value to the request body everytime you create a new book.\n// Dynamic cretaion of isbn number starts with RS \nconsole.log(pm.globals.get(\"companyCode\"));\nconst code = pm.globals.get(\"companyCode\");\nconst val = pm.variables.replaceIn(\"{{$randomInt}}\")\npm.collectionVariables.set(\"isbn\", code + val);\n\n//pm.collectionVariables.set(\"book_name\", pm.iterationData.get(\"BookName\"));\n//pm.collectionVariables.set(\"author_name\", pm.iterationData.get(\"Author\"));\n\n\n\n\n"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n\"name\":\"{{book_name}}\",\n\"isbn\":\"{{isbn}}\",\n\"aisle\":\"2271234\",\n\"author\":\"{{author_name}}\"\n}\n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{BASE_URL}}/Library/Addbook.php",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "Library",
+            "Addbook.php"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GetBook",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const getBookResponse = pm.response.json();\nconsole.log(getBookResponse); // this is array with one object inside. so we cant directly access like getBookResponse.title\npm.test(\"Validate Author from JSON response\", function () \n{\n    pm.expect(getBookResponse[0].author).to.eql(pm.collectionVariables.get(\"author_name\"));\n    \n})\n\npm.test(\"Validate isbn from JSON response\", function ()\n{\n    pm.expect(getBookResponse[0].isbn).to.eql(pm.collectionVariables.get(\"isbn\"));\n})\n\npm.test(\"Validate response Time\", function ()\n{\n    pm.expect(pm.response.responseTime).to.be.below(2000); \n})\n\nconst schema = {\n  \"type\": \"array\",\n  \"items\": {\n    \"type\": \"object\",\n    \"properties\": {\n      \"book_name\": {\n        \"type\": \"string\"\n      },\n      \"isbn\": {\n        \"type\": \"string\"\n      },\n      \"aisle\": {\n        \"type\": \"string\"\n      },\n      \"author\": {\n        \"type\": \"string\"\n      }\n    },\n    \"required\": [\n      \"book_name\",\n      \"isbn\",\n      \"aisle\",\n      \"author\"\n    ]\n  }\n}\n\npm.test(\"Validate the json response schema\", function ()\n{\n    pm.response.to.have.jsonSchema(schema);\n})\n\n\n\n\n"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{BASE_URL}}/Library/GetBook.php?ID={{book_id}}",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "Library",
+            "GetBook.php"
+          ],
+          "query": [
+            {
+              "key": "ID",
+              "value": "{{book_id}}"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DeleteBook",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const jsonData = pm.response.json();\npm.test(\"Book deleted successfully\", function ()\n{\n    pm.expect(jsonData.msg).to.include(\"book is successfully deleted\");\n})\n\npm.test(\"Status code is 200\", function () \n{\n    pm.response.to.have.status(200);\n})\n\npm.test(\"Response time is less than 200ms\", function ()\n{\n    pm.expect(pm.response.responseTime).to.be.below(2000);\n})\n\n\n\nconst schema = {\n  \"type\": \"object\",\n  \"properties\": {\n    \"msg\": {\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"msg\"\n  ]\n}\n\npm.test(\"Response body is valid JSON\", function () {\n    pm.response.to.have.jsonSchema(schema);\n});\n\n\n// if(pm.collectionVariables.get(\"flag\"))\n// {\n//     pm.execution.setNextRequest(AddBook)\n// }\n\n"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n\"ID\" : \"{{book_id}}\"\n} \n",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{BASE_URL}}/Library/DeleteBook.php",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "Library",
+            "DeleteBook.php"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "isbn",
+      "value": ""
+    },
+    {
+      "key": "author_name",
+      "value": ""
+    },
+    {
+      "key": "book_name",
+      "value": ""
+    },
+    {
+      "key": "flag",
+      "value": ""
+    }
+  ]
+}
